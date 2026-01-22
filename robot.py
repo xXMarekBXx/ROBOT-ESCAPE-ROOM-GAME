@@ -1,21 +1,23 @@
 class Robot:
-    def __init__(self):
-        self.x = 0   # column
-        self.y = 5   # row
-        self.moves = 0 #how many moves
+    START_X = 0
+    START_Y = 5
 
-    def get_robot_possition(self):
-        return self.x, self.y
+    def __init__(self, start_x: int = START_X, start_y: int = START_Y):
+        self._x = start_x
+        self._y = start_y
 
-    def set_robot_possition(self, move):
-        self.moves += 1
+    def get_position(self) -> tuple[int, int]:
+        return self._x, self._y
 
-        if move == "w":
-            self.y -= 1
-        elif move == "s":
-            self.y += 1
-        elif move == "a":
-            self.x -= 1
-        elif move == "d":
-            self.x += 1
-        return self.x, self.y
+    def move(self, direction: str) -> None:
+        """Move robot in given direction (w/a/s/d)."""
+        moves = {
+            'w': (0, -1),
+            's': (0, 1),
+            'a': (-1, 0),
+            'd': (1, 0)
+        }
+        if direction in moves:
+            dx, dy = moves[direction]
+            self._x += dx
+            self._y += dy

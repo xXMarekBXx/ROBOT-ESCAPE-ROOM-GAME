@@ -5,32 +5,42 @@ from scene import Scene
 robot = Robot()
 scene = Scene()
 
+moves = 0
+
 
 def clear_console():
     os.system("cls" if os.name == "nt" else "clear")
-    print("\033[H\033[J")
 
 
-def clear_console_draw_scene_and_give_appropriate_announcement(announcement):
-    x, y = robot.get_robot_possition()
+def update_screen(message):
+    x, y = robot.get_position()
     clear_console()
-    print(announcement)
+    print(message)
     scene.draw_scene_with_robot(x, y)
 
 
 def won_announcement():
     print("YOU HAVE WON!!!")
-    print(f"You did it in: {robot.moves} moves :)")
+    print(f"You did it in: {moves} moves :)")
     print("CONGRATULATIONS!!!")
 
 
 def move_input():
-    move = input("Move your robot by pressing:"
-                 " 'W' to go up,"
-                 " 'S' to go down,"
-                 " 'A' to go left"
-                 " and 'D' to go right: ").lower()
-    return move
+    valid_moves = {"w", "a", "s", "d"}
+
+    while True:
+        move = input(
+            "Move your robot by pressing:"
+            " 'W' to go up,"
+            " 'S' to go down,"
+            " 'A' to go left"
+            " and 'D' to go right: "
+        ).lower()
+
+        if move in valid_moves:
+            return move
+
+        print("Invalid input. Please press W, A, S or D.")
 
 
 def starting_announcement():
@@ -44,59 +54,67 @@ def check_next_move(x, y, direction):
     new_y = y
 
     if direction == 'w':
-        new_y = y - 1
+        new_y -= 1
     elif direction == 's':
-        new_y = y + 1
+        new_y += 1
     elif direction == 'a':
-        new_x = x - 1
+        new_x -= 1
     elif direction == 'd':
-        new_x = x + 1
+        new_x += 1
+
     return new_x, new_y
 
 
-def draw_the_game():
-    x, y = robot.get_robot_possition()
+def check_win():
+    x, y = robot.get_position()
+    return scene.is_goal(x, y)
 
-    if scene.is_goal(x, y):
-        won_announcement()
-        return True
 
-    moving_the_robot = move_input()
+def process_move(direction):
+    x, y = robot.get_position()
+    new_x, new_y = check_next_move(x, y, direction)
+    return scene.check_if_move_is_allowed(new_x, new_y)
 
-    new_x, new_y = check_next_move(x, y, moving_the_robot)
 
-    status = scene.check_if_move_is_allowed(new_x, new_y)
+def apply_move(direction):
+    robot.move(direction)
 
-    if status == "move allowed":
-        robot.set_robot_possition(moving_the_robot)
-        clear_console_draw_scene_and_give_appropriate_announcement("Good move :)"
-                                                                   " Keep going!")
-    elif status == "border":
-        clear_console_draw_scene_and_give_appropriate_announcement("Move NOT allowed. "
-                                                                   "You have collided with the border of the map! "
-                                                                   "Please try a different move.")
-    elif status == "obstacle":
-        clear_console_draw_scene_and_give_appropriate_announcement("Move NOT allowed. "
-                                                                   "You have collided with the obstacle! "
-                                                                   "Please try a different move.")
 
+# -------------------------
+# GAME START
+# -------------------------
 
 starting_announcement()
-start_the_game = "Y"
-close_the_game = "N"
 
 while True:
-    player_choice = input("Press 'Y' if you want to play or 'N' if you want to close the game: ").lower()
+    player_choice = input("Press 'Y' to play or 'N' to exit: ").lower()
 
     if player_choice in ("y", "n"):
         break
-    else:
-        print("Invalid choice.")
+    print("Invalid choice.")
 
 if player_choice == "n":
     exit()
-elif player_choice == "y":
-    clear_console_draw_scene_and_give_appropriate_announcement("Lets Go!")
-    while True:
-        if draw_the_game():
-            break
+
+update_screen("Let's go!")
+
+while True:
+
+    if check_win():
+        won_announcement()
+        break
+
+    direction = move_input()
+
+    status = process_move(direction)
+
+    if status == "move allowed":
+        moves += 1
+        apply_move(direction)
+        update_screen("Good move :) Keep going!")
+
+    elif status == "border":
+        update_screen("Move NOT allowed. You hit the border! Try again.")
+
+    elif status == "obstacle":
+        update_screen("Move NOT allowed. You hit an obstacle! Try again.")
